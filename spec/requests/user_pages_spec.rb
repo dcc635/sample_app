@@ -32,18 +32,32 @@ describe "UserPages" do
 
     describe "delete links" do
       let(:admin) { FactoryGirl.create(:admin) }
-      before do
-        sign_in admin
-        visit users_path
+
+      describe "via UI" do
+        before do
+          sign_in admin
+          visit users_path
+        end
+
+        it { should have_link('delete', href: user_path(User.first)) }
+        it "admin should be able to delete another user" do
+          expect do
+            click_link('delete', match: :first)
+          end.to change(User, :count).by(-1)
+        end
+        it { should_not have_link('delete', href: user_path(admin)) }
       end
 
-      it { should have_link('delete', href: user_path(User.first)) }
-      it "should be able to delete another user" do
-        expect do
-          click_link('delete', match: :first)
-        end.to change(User, :count).by(-1)
+      describe "via request" do
+        before do
+          sign_in admin, no_capybara: true
+        end
+        it "as admin should not be able to delete itself" do
+          expect do
+            delete user_path(admin)
+          end.not_to change(User, :count)
+        end
       end
-      it { should_not have_link('delete', href: user_path(admin)) }
     end
   end
 
